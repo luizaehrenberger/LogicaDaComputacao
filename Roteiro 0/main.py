@@ -1,62 +1,26 @@
 import sys
-import operator
+import re
 
-def sanitize_expression(expression):
-    """Remove espaços extras da expressão."""
-    return expression.replace(" ", "")
+def main():
+    if len(sys.argv) != 2:
+        raise Exception('Uso: python main.py "1+2"')
 
-def evaluate_math_expression(expression):
-    """Avalia uma expressão matemática simples contendo apenas + e -."""
+    s = sys.argv[1].strip()
 
-    # Dicionário de operadores permitidos
-    allowed_operators = {
-        '+' : operator.add,
-        '-' : operator.sub,
-    }
+    # Validação: número, seguido de (op (+|-) com número) repetidamente.
+    # Espaços são permitidos APENAS ao redor dos operadores, nunca entre dígitos.
+    if not re.fullmatch(r'\d+(?:\s*[+-]\s*\d+)*', s):
+        raise Exception("Expressão inválida")
 
-    number_buffer = ''  # Armazena temporariamente os números
-    numbers = []  # Lista de números extraídos
-    operations = []  # Lista de operadores extraídos
+    # Remove espaços para avaliar
+    expr = re.sub(r'\s+', '', s)
 
-    for char in expression:
-        if char.isdigit():
-            number_buffer += char  # Constrói o número dígito por dígito
-        else:
-            if number_buffer:  # Se houver um número acumulado, adiciona à lista
-                numbers.append(int(number_buffer))
-                number_buffer = ''
-            if char in allowed_operators:
-                operations.append(char)  # Adiciona operador encontrado
-            else:
-                raise ValueError(f"Caractere inválido encontrado: {char}")
+    # Captura inteiros com sinal (o primeiro sem sinal explícito; os seguintes com + ou -)
+    tokens = re.findall(r'[+-]?\d+', expr)
+    total = sum(int(t) for t in tokens)
 
-    if number_buffer:
-        numbers.append(int(number_buffer))  # Adiciona o último número acumulado
-
-    # Verificação de erro: a quantidade de operadores deve ser exatamente a de números - 1
-    if len(numbers) != len(operations) + 1:
-        raise ValueError("Expressão inválida")
-
-    if not operations:
-        raise ValueError("Operador ausente na expressão")
-
-    # Processamento da operação matemática
-    result = numbers[0]
-    for i, op in enumerate(operations):
-        result = allowed_operators[op](result, numbers[i + 1])
-
-    return result
+    # Imprime apenas o número
+    print(total)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        raise ValueError("Uso correto: python main.py '<expressão>'")
-
-    input_expression = sys.argv[1]
-
-    cleaned_expression = sanitize_expression(input_expression)
-
-    try:
-        result = evaluate_math_expression(cleaned_expression)
-        print(f"{int(result)}")  # Garante que a saída seja um número inteiro
-    except Exception as e:
-        raise ValueError(f"Erro ao avaliar expressão: {e}")
+    main()
