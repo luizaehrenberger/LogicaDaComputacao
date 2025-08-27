@@ -87,7 +87,7 @@ class Lexer:
 class Parser:
     """
     Análise sintática: consome tokens do Lexer e verifica a aderência ao diagrama.
-    Gramática (da aula/roteiro):
+    Gramática (roteiro):
       Expression := INT { (PLUS | MINUS) INT }*
     Retorna o resultado numérico da expressão analisada.
     """
@@ -115,7 +115,6 @@ class Parser:
             Parser.lex.select_next()
 
             if Parser.lex.next.kind != 'INT':
-                # erro específico por operação ajuda na depuração
                 raise Exception(f"[Parser] Expected INT after {op}, got {Parser.lex.next.kind}")
 
             if op == 'PLUS':
@@ -162,5 +161,6 @@ if __name__ == "__main__":
     try:
         main()
     except Exception as e:
-        # Mensagens de erro claras com a origem ([Lexer]/[Parser])
-        print(str(e))
+        # Erros vão para STDERR e exit code != 0 (para o seu runner marcar como Exception)
+        print(str(e), file=sys.stderr)
+        sys.exit(1)
