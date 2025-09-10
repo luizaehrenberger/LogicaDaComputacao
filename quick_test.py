@@ -88,7 +88,7 @@ def main() -> None:
     print("=== Testes do Roteiro 4 (AST) ===\n")
     for i, t in enumerate(tests, 1):
         ok, msg = t.run()
-        status = "✅" if ok else "❌"
+        status = "OK" if ok else "NOT OK"
         print(f"{status} [{i:02d}/{total}] {t.expr!r} -> {msg}")
         if ok:
             passed += 1
