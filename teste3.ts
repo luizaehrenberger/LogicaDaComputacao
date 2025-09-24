@@ -1,4 +1,9 @@
-a = 5;
-b = a + 2;
-c = b * a - 3;
-log(c);   // (5+2)*5 - 3 = 35 - 3 = 32
+// Lê dois inteiros e imprime o maior
+a = readline();
+b = readline();
+
+if (a >= b) {
+  log(a);
+} else {
+  log(b);
+}

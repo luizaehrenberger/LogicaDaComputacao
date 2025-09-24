@@ -1,17 +1,21 @@
-// Bloco com atribuições e prints
-x1 = 3;
-y2 = 4;
-z_final = x1 + y2 * (2 + 1);
-log(z_final);   // 3 + 4 * 3 = 15
+// if/else com &&, || e !
+x = 10;
+y = 3;
 
-// Unários e reuso de variáveis
-a = -10;
-b = +2;
-c = a / b;
-log(c);         // -5
+{
+  // (x > y) && !(y == 0)  =>  (10 > 3) && !(false) => true && true => true
+  if ((x > y) && !(y == 0)) {
+    log(111);
+  } else {
+    log(222);
+  }
+}
 
-;               // linha vazia
-
-// Expressões com outras variáveis
-k = (x1 + y2) * (a - b);
-log(k);         // (3+4)*( -10-2 ) = 7 * -12 = -84
+{
+  // (x < y) || (x == 10) => false || true => true
+  if ((x < y) || (x == 10)) {
+    log(333);
+  } else {
+    log(444);
+  }
+}
