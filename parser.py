@@ -80,9 +80,13 @@ class Parser:
     @staticmethod
     def parse_rel_expression() -> Node:
         left = Parser.parse_expression()
-        while Parser.lex.next.kind in ('EQUAL', 'NEQ', 'LT', 'GT', 'LE', 'GE'):
+        while Parser.lex.next.kind in ('EQUAL', 'NEQ', 'LT', 'GT', 'LE', 'GE', 'EQUAL_STRICT', 'NEQ_STRICT'):
             kind = Parser.lex.next.kind
-            op = {'EQUAL':'==','NEQ':'!=','LT':'<','GT':'>','LE':'<=','GE':'>='}[kind]
+            op = {
+                'EQUAL': '==', 'NEQ': '!=',
+                'LT': '<', 'GT': '>', 'LE': '<=', 'GE': '>=',
+                'EQUAL_STRICT': '===', 'NEQ_STRICT': '!=='
+            }[kind]
             Parser.lex.select_next()
             right = Parser.parse_expression()
             left = BinOp(op, left, right)

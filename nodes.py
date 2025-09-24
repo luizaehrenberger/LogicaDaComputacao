@@ -94,12 +94,15 @@ class BinOp(Node):
             return a % b
 
         # rel
-        if self.value == '==': return 1 if a == b else 0
-        if self.value == '!=': return 1 if a != b else 0
-        if self.value == '<':  return 1 if a <  b else 0
-        if self.value == '>':  return 1 if a >  b else 0
-        if self.value == '<=': return 1 if a <= b else 0
-        if self.value == '>=': return 1 if a >= b else 0
+        if self.value == '==':  return 1 if a == b else 0
+        if self.value == '!=':  return 1 if a != b else 0
+        if self.value == '===': return 1 if a == b else 0   # strict: igual a ==
+        if self.value == '!==': return 1 if a != b else 0   # strict: igual a !=
+        if self.value == '<':   return 1 if a <  b else 0
+        if self.value == '>':   return 1 if a >  b else 0
+        if self.value == '<=':  return 1 if a <= b else 0
+        if self.value == '>=':  return 1 if a >= b else 0
+
 
         # bool
         if self.value == '&&': return 1 if (a != 0 and b != 0) else 0

@@ -37,7 +37,15 @@ class Lexer:
             self.next = Token('EOF', '')
             return
 
-        # operadores de 2 chars
+        # --- 3 caracteres (tem que vir ANTES dos de 2) ---
+        if c == '=' and self._peek() == '=' and (self.position + 2 < len(self.source) and self.source[self.position+2] == '='):
+            self.position += 3
+            self.next = Token('EQUAL_STRICT', '==='); return
+        if c == '!' and self._peek() == '=' and (self.position + 2 < len(self.source) and self.source[self.position+2] == '='):
+            self.position += 3
+            self.next = Token('NEQ_STRICT', '!=='); return
+
+        # --- 2 caracteres ---
         if c == '&' and self._peek() == '&':
             self.position += 2; self.next = Token('AND', '&&'); return
         if c == '|' and self._peek() == '|':
@@ -50,6 +58,7 @@ class Lexer:
             self.position += 2; self.next = Token('LE', '<='); return
         if c == '>' and self._peek() == '=':
             self.position += 2; self.next = Token('GE', '>='); return
+
 
         # operadores de 1 char
         if c == '+': self.position += 1; self.next = Token('PLUS', '+'); return
