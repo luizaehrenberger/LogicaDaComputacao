@@ -15,7 +15,7 @@ def str_value_of(var: Variable) -> str:
 
 def ensure_type(var: Variable, expected: str, ctx: str):
     if var.type != expected:
-        raise Exception(f"[Semântico] Esperado {expected} em {ctx}, recebeu {var.type}")
+        raise Exception(f"[Semantic] Esperado {expected} em {ctx}, recebeu {var.type}")
 
 class Node(ABC):
     def __init__(self, value: Any, children: List['Node'] | None = None):
@@ -82,7 +82,7 @@ class Read(Node):
         try:
             return V_num(int(line.strip()))
         except ValueError:
-            raise Exception(f"[Semântico] readline esperava inteiro, recebeu: {line!r}")
+            raise Exception(f"[Semantic] readline esperava inteiro, recebeu: {line!r}")
 
 
 # ---- Atribuição ----
@@ -113,7 +113,7 @@ class VarDec(Node):
             init: Variable = self.children[1].evaluate(st)
             if init.type != self.value:
                 raise Exception(
-                    f"[Semântico] Tipos incompatíveis em inicialização de '{ident.value}': "
+                    f"[Semantic] Tipos incompatíveis em inicialização de '{ident.value}': "
                     f"esperado {self.value}, recebeu {init.type}"
                 )
             st.set(ident.value, init)
@@ -135,7 +135,7 @@ class UnOp(Node):
         if self.value == '!':
             ensure_type(v, "boolean", "unário !")
             return V_bool(not v.value)
-        raise Exception(f"[UnOp] Operador unário inválido: {self.value}")
+        raise Exception(f"[Semantic] Operador unário inválido: {self.value}")
 
 
 # ---- Binário ----
@@ -145,7 +145,7 @@ class BinOp(Node):
 
     @staticmethod
     def _int_div_trunc_toward_zero(a: int, b: int) -> int:
-        if b == 0: raise Exception("[Semântico] Divisão por zero")
+        if b == 0: raise Exception("[Semantic] Divisão por zero")
         return int(a / b)
 
     def evaluate(self, st: SymbolTable) -> Variable:
@@ -160,13 +160,13 @@ class BinOp(Node):
                 return V_str(str_value_of(a) + str_value_of(b))
             # Caso contrário: aritmética estrita sobre number
             if a.type != 'number' or b.type != 'number':
-                raise Exception(f"[Semântico] Operação aritmética requer 'number', recebeu {a.type} {op} {b.type}")
+                raise Exception(f"[Semantic] Operação aritmética requer 'number', recebeu {a.type} {op} {b.type}")
             if op == '+': return V_num(a.value + b.value)
             if op == '-': return V_num(a.value - b.value)
             if op == '*': return V_num(a.value * b.value)
             if op == '/': return V_num(self._int_div_trunc_toward_zero(a.value, b.value))
             if op == '%':
-                if b.value == 0: raise Exception("[Semântico] Módulo por zero")
+                if b.value == 0: raise Exception("[Semantic] Módulo por zero")
                 return V_num(a.value % b.value)
 
         # ---- Relacionais (estritos e não-estritos) ----
@@ -189,7 +189,7 @@ class BinOp(Node):
                         '>=': a.value >= b.value,
                     }[op]
                     return V_bool(res)
-                raise Exception(f"[Semântico] Operador relacional '{op}' requer tipos iguais number/number ou string/string; recebeu {a.type} e {b.type}")
+                raise Exception(f"[Semantic] Operador relacional '{op}' requer tipos iguais number/number ou string/string; recebeu {a.type} e {b.type}")
 
             if op in ('===', '!=='):
                 # estrito: tipos devem ser iguais
@@ -204,11 +204,11 @@ class BinOp(Node):
         # ---- Booleanos ----
         if op in ('&&', '||'):
             if a.type != 'boolean' or b.type != 'boolean':
-                raise Exception(f"[Semântico] Operadores lógicos requerem boolean: recebeu {a.type} {op} {b.type}")
+                raise Exception(f"[Semantic] Operadores lógicos requerem boolean: recebeu {a.type} {op} {b.type}")
             if op == '&&': return V_bool(a.value and b.value)
             if op == '||': return V_bool(a.value or  b.value)
 
-        raise Exception(f"[BinOp] Operador inválido: {op}")
+        raise Exception(f"[Semantic] Operador inválido: {op}")
 
 
 # ---- If / While / Block ----
