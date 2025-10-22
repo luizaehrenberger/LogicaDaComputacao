@@ -192,8 +192,10 @@ class BinOp(Node):
                 raise Exception(f"[Semantic] Operador relacional '{op}' requer tipos iguais number/number ou string/string; recebeu {a.type} e {b.type}")
 
             if op in ('===', '!=='):
-                # estrito: tipos devem ser iguais
-                res = (a.type == b.type and a.value == b.value)
+                # *** NOVO: comparação estrita exige tipos iguais; caso contrário -> erro ***
+                if a.type != b.type:
+                    raise Exception(f"[Semantic] Tipos incompatíveis em comparação estrita: {a.type} {op} {b.type}")
+                res = (a.value == b.value)
                 return V_bool(res if op == '===' else (not res))
 
             # == e != "solto": se tipos diferentes -> false/true diretamente
