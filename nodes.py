@@ -2,7 +2,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, List
 from symbol_table import SymbolTable, Variable
-from code import Code
+from codegen import Code
 
 # Helpers (interpretador)
 def V_num(x: int) -> Variable: return Variable("number", int(x))

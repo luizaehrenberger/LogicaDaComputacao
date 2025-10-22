@@ -3,7 +3,7 @@ import os
 from prepro import PrePro
 from parser import Parser
 from symbol_table import SymbolTable
-from code import Code  # estamos dentro de src/, então pegamos o nosso code.py
+from codegen import Code  # estamos dentro de src/, então pegamos o nosso code.py
 
 def main():
     if len(sys.argv) < 2:
