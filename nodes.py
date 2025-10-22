@@ -186,25 +186,23 @@ class UnOp(Node):
             return V_bool(not v.value)
         raise Exception(f"[Semantic] Operador unário inválido: {self.value}")
 
+     
     def generate(self, st: SymbolTable) -> None:
         self.children[0].generate(st)
         if self.value == '+':
-            # EAX já é o valor
             return
         if self.value == '-':
             Code.append("  neg eax")
             return
         if self.value == '!':
-            # EAX -> 0/1 invertido
+            # EAX: 0 -> 1 ; !=0 -> 0
             Code.append("  cmp eax, 0")
+            Code.append(f"  jne not_false_{self.id}")
+            Code.append("  mov eax, 1")
+            Code.append(f"  jmp not_end_{self.id}")
+            Code.append(f"not_false_{self.id}:")
             Code.append("  mov eax, 0")
-            Code.append("  mov ecx, 1")
-            Code.append("  cmove eax, ecx")     # se era zero -> 1
-            Code.append("  cmp eax, 0")
-            Code.append("  mov ecx, 1")
-            Code.append("  mov edx, 0")         ; # edx não usado depois, mas cmovne precisa de src
-            Code.append("  cmovne eax, edx")    ; # se era 1 -> 0    (técnica simples)
-            # Obs: poderíamos usar labels. Mantive sem EBX como pedido.
+            Code.append(f"not_end_{self.id}:")
             return
         raise Exception(f"[CodeGen] UnOp inválido: {self.value}")
 # ---------- Binário ----------
