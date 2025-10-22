@@ -2,10 +2,9 @@ from __future__ import annotations
 
 class Variable:
     """
-    Representa um valor tipado na linguagem.
-    type ∈ {'number', 'boolean', 'string'}
-    value: int | bool | str  (em tempo de execução, no interpretador)
-    shift: deslocamento em bytes a partir de EBP (para codegen), ex: 4, 8, ...
+    type ∈ {'number','boolean','string'}
+    value: int|bool|str (para interpretador)
+    shift: deslocamento [EBP-shift] (para codegen), múltiplos de 4
     """
     __slots__ = ("type", "value", "is_const", "shift")
 
@@ -14,8 +13,8 @@ class Variable:
             raise Exception(f"[SymbolTable] Tipo inválido: {vtype}")
         self.type = vtype
         self.value = value
-        self.is_const = is_const  # reservado para 'const'
-        self.shift = shift        # usado no gerador
+        self.is_const = is_const
+        self.shift = shift
 
     def __repr__(self) -> str:
         return f"Variable(type={self.type!r}, value={self.value!r}, shift={self.shift!r})"
@@ -24,9 +23,8 @@ class Variable:
 class SymbolTable:
     def __init__(self):
         self._table: dict[str, Variable] = {}
-        self._next_shift: int = 0  # em bytes; primeira var => 4
+        self._next_shift: int = 0  # em bytes (4,8,12,...)
 
-    # criação com tipo, produz (para codegen) um shift novo
     def create_variable(self, name: str, vtype: str) -> None:
         if name in self._table:
             raise Exception(f"[Semantic] Variável '{name}' já declarada")
@@ -34,7 +32,6 @@ class SymbolTable:
         default = 0 if vtype == "number" else (False if vtype == "boolean" else "")
         self._table[name] = Variable(vtype, default, False, self._next_shift)
 
-    # Setter exige declaração e checa tipo (interpretador)
     def set(self, name: str, var_value: Variable) -> None:
         if name not in self._table:
             raise Exception(f"[Semantic] Variável '{name}' não declarada")
