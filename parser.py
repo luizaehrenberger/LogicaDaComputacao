@@ -138,22 +138,39 @@ class Parser:
 
     @staticmethod
     def parse_var_declaration() -> Node:
-        # grammar: let TYPE IDEN [= expr] ;
+        # Aceita:
+        #   (A) let TYPE IDEN [= expr] ;
+        #   (B) let IDEN : TYPE [= expr] ;
         if Parser.lex.next.kind != 'VAR':
             raise Exception(f"[Parser] Esperado 'let', obtido {Parser.lex.next.kind}")
         Parser.lex.select_next()
 
-        if Parser.lex.next.kind != 'TYPE':
-            raise Exception(f"[Parser] Esperado TYPE (string|number|boolean), obtido {Parser.lex.next.kind}")
-        vtype_text = Parser.lex.next.value
-        Parser.lex.select_next()
-
-        if Parser.lex.next.kind != 'IDEN':
-            raise Exception(f"[Parser] Esperado IDENTIFIER após TYPE, obtido {Parser.lex.next.kind}")
-        ident_name = Parser.lex.next.value
-        Parser.lex.select_next()
-
+        vtype_text = None
+        ident_name = None
         init_expr = None
+
+        if Parser.lex.next.kind == 'TYPE':
+            # Forma A
+            vtype_text = Parser.lex.next.value
+            Parser.lex.select_next()
+            if Parser.lex.next.kind != 'IDEN':
+                raise Exception(f"[Parser] Esperado IDENTIFIER após TYPE, obtido {Parser.lex.next.kind}")
+            ident_name = Parser.lex.next.value
+            Parser.lex.select_next()
+        elif Parser.lex.next.kind == 'IDEN':
+            # Forma B
+            ident_name = Parser.lex.next.value
+            Parser.lex.select_next()
+            if Parser.lex.next.kind != 'COLON':
+                raise Exception(f"[Parser] Esperado ':', obtido {Parser.lex.next.kind}")
+            Parser.lex.select_next()
+            if Parser.lex.next.kind != 'TYPE':
+                raise Exception(f"[Parser] Esperado TYPE (string|number|boolean), obtido {Parser.lex.next.kind}")
+            vtype_text = Parser.lex.next.value
+            Parser.lex.select_next()
+        else:
+            raise Exception(f"[Parser] Esperado TYPE ou IDENTIFIER após 'let', obtido {Parser.lex.next.kind}")
+
         if Parser.lex.next.kind == 'ASSIGN':
             Parser.lex.select_next()
             init_expr = Parser.parse_bool_expression()

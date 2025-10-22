@@ -37,8 +37,8 @@ class Lexer:
 
     def _string_literal(self) -> str:
         # Consome '"' atual e lê até o próximo '"'
-        # Suporta escape simples \" e \\.
-        self._advance()  # consumir "
+        # Suporta escape simples \" \\ \n \t \r
+        self._advance()  # consumir a aspa inicial
         chars = []
         while True:
             c = self._current_char()
@@ -111,6 +111,7 @@ class Lexer:
         if c == '{': self._advance(); self.next = Token('OPEN_BRA', '{'); return
         if c == '}': self._advance(); self.next = Token('CLOSE_BRA', '}'); return
         if c == ';': self._advance(); self.next = Token('END', ';'); return
+        if c == ':': self._advance(); self.next = Token('COLON', ':'); return  # para let x:TYPE
         if c == '=': self._advance(); self.next = Token('ASSIGN', '='); return
         if c == '!': self._advance(); self.next = Token('NOT', '!'); return
         if c == '<': self._advance(); self.next = Token('LT', '<'); return
@@ -133,7 +134,6 @@ class Lexer:
                 c = self._current_char()
             ident = self.source[start:self.position]
             kind = self.RESERVED.get(ident, 'IDEN')
-            # BOOL tem valor True/False no token
             if kind == 'BOOL':
                 self.next = Token('BOOL', True if ident == 'true' else False); return
             self.next = Token(kind, ident)

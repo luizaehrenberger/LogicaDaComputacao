@@ -3,10 +3,15 @@ from abc import ABC, abstractmethod
 from typing import Any, List
 from symbol_table import SymbolTable, Variable
 
-# Helpers de checagem e criação de Variable
+# Helpers de criação
 def V_num(x: int) -> Variable: return Variable("number", int(x))
 def V_bool(b: bool) -> Variable: return Variable("boolean", bool(b))
 def V_str(s: str) -> Variable: return Variable("string", str(s))
+
+def str_value_of(var: Variable) -> str:
+    if var.type == "boolean":
+        return "true" if var.value else "false"
+    return str(var.value)
 
 def ensure_type(var: Variable, expected: str, ctx: str):
     if var.type != expected:
@@ -63,7 +68,7 @@ class Print(Node):
         super().__init__('print', [child])
     def evaluate(self, st: SymbolTable) -> None:
         v: Variable = self.children[0].evaluate(st)
-        print(v.value)
+        print(str_value_of(v))
 
 
 # ---- Read ----
@@ -73,11 +78,10 @@ class Read(Node):
     def evaluate(self, st: SymbolTable) -> Variable:
         line = input()
         line = line.rstrip("\n")
-        # Mantemos compatível com roteiros anteriores: readline retorna number
+        # Mantém compat com roteiros antigos: retorna number
         try:
             return V_num(int(line.strip()))
         except ValueError:
-            # Caso queira ler string em testes: trate como string usando aspas no programa
             raise Exception(f"[Semântico] readline esperava inteiro, recebeu: {line!r}")
 
 
@@ -151,9 +155,9 @@ class BinOp(Node):
 
         # ---- Aritmética / Concatenação ----
         if op in ('+', '-', '*', '/', '%'):
-            # Concatenação: se qualquer operando for string -> resultado string (coerção simples)
+            # Concatenação: se qualquer operando for string -> resultado string
             if op == '+' and ('string' in (a.type, b.type)):
-                return V_str(str(a.value) + str(b.value))
+                return V_str(str_value_of(a) + str_value_of(b))
             # Caso contrário: aritmética estrita sobre number
             if a.type != 'number' or b.type != 'number':
                 raise Exception(f"[Semântico] Operação aritmética requer 'number', recebeu {a.type} {op} {b.type}")
@@ -168,26 +172,33 @@ class BinOp(Node):
         # ---- Relacionais (estritos e não-estritos) ----
         if op in ('==', '!=', '===', '!==', '<', '>', '<=', '>='):
             if op in ('<', '>', '<=', '>='):
-                # apenas number
-                if a.type != 'number' or b.type != 'number':
-                    raise Exception(f"[Semântico] Operador relacional '{op}' requer 'number', recebeu {a.type} e {b.type}")
-                res = {
-                    '<':  a.value <  b.value,
-                    '>':  a.value >  b.value,
-                    '<=': a.value <= b.value,
-                    '>=': a.value >= b.value,
-                }[op]
-                return V_bool(res)
+                # number vs number  OU  string vs string (ordem lexicográfica)
+                if a.type == 'number' and b.type == 'number':
+                    res = {
+                        '<':  a.value <  b.value,
+                        '>':  a.value >  b.value,
+                        '<=': a.value <= b.value,
+                        '>=': a.value >= b.value,
+                    }[op]
+                    return V_bool(res)
+                if a.type == 'string' and b.type == 'string':
+                    res = {
+                        '<':  a.value <  b.value,
+                        '>':  a.value >  b.value,
+                        '<=': a.value <= b.value,
+                        '>=': a.value >= b.value,
+                    }[op]
+                    return V_bool(res)
+                raise Exception(f"[Semântico] Operador relacional '{op}' requer tipos iguais number/number ou string/string; recebeu {a.type} e {b.type}")
 
             if op in ('===', '!=='):
                 # estrito: tipos devem ser iguais
                 res = (a.type == b.type and a.value == b.value)
                 return V_bool(res if op == '===' else (not res))
 
-            # == e !=: comparação "solta" por valor quando tipos iguais; se tipos diferentes -> false/true
+            # == e != "solto": se tipos diferentes -> false/true diretamente
             if a.type != b.type:
                 return V_bool(op == '!=')
-            # tipos iguais
             return V_bool((a.value == b.value) if op == '==' else (a.value != b.value))
 
         # ---- Booleanos ----

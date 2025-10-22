@@ -13,7 +13,7 @@ class Variable:
             raise Exception(f"[SymbolTable] Tipo inválido: {vtype}")
         self.type = vtype
         self.value = value
-        self.is_const = is_const  # (usado no questionário; não afeta este roteiro)
+        self.is_const = is_const  # reservado para 'const' (questionário)
 
     def __repr__(self) -> str:
         return f"Variable(type={self.type!r}, value={self.value!r})"
