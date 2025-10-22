@@ -4,37 +4,33 @@ class Variable:
     """
     Representa um valor tipado na linguagem.
     type ∈ {'number', 'boolean', 'string'}
-    value: int | bool | str  (em tempo de execução, no interpretador)
-    shift: deslocamento em bytes a partir de EBP (para codegen), ex: 4, 8, ...
+    value: int | bool | str
     """
-    __slots__ = ("type", "value", "is_const", "shift")
+    __slots__ = ("type", "value", "is_const")
 
-    def __init__(self, vtype: str, value, is_const: bool=False, shift: int | None = None):
+    def __init__(self, vtype: str, value, is_const: bool=False):
         if vtype not in ("number", "boolean", "string"):
             raise Exception(f"[SymbolTable] Tipo inválido: {vtype}")
         self.type = vtype
         self.value = value
-        self.is_const = is_const  # reservado para 'const'
-        self.shift = shift        # usado no gerador
+        self.is_const = is_const  # reservado para 'const' (questionário)
 
     def __repr__(self) -> str:
-        return f"Variable(type={self.type!r}, value={self.value!r}, shift={self.shift!r})"
+        return f"Variable(type={self.type!r}, value={self.value!r})"
 
 
 class SymbolTable:
     def __init__(self):
         self._table: dict[str, Variable] = {}
-        self._next_shift: int = 0  # em bytes; primeira var => 4
 
-    # criação com tipo, produz (para codegen) um shift novo
+    # Roteiro 7: criar variáveis com tipo
     def create_variable(self, name: str, vtype: str) -> None:
         if name in self._table:
             raise Exception(f"[Semantic] Variável '{name}' já declarada")
-        self._next_shift += 4
         default = 0 if vtype == "number" else (False if vtype == "boolean" else "")
-        self._table[name] = Variable(vtype, default, False, self._next_shift)
+        self._table[name] = Variable(vtype, default)
 
-    # Setter exige declaração e checa tipo (interpretador)
+    # Setter agora exige declaração prévia
     def set(self, name: str, var_value: Variable) -> None:
         if name not in self._table:
             raise Exception(f"[Semantic] Variável '{name}' não declarada")
@@ -45,7 +41,7 @@ class SymbolTable:
             raise Exception(
                 f"[Semantic] Tipos incompatíveis em atribuição: esperado {target.type}, recebeu {var_value.type}"
             )
-        target.value = var_value.value
+        target.value = var_value.value  # mantém o tipo
 
     def get(self, name: str) -> Variable:
         if name not in self._table:
