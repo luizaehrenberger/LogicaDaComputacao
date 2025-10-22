@@ -2,8 +2,8 @@ from __future__ import annotations
 from typing import List
 from lexer import Lexer
 from nodes import (
-    Node, IntVal, StringVal, BoolVal, Identifier, NoOp, Print, Read, Assignment,
-    UnOp, BinOp, If, While, Block, VarDec
+    Node, IntVal, Identifier, NoOp, Print, Read, Assignment,
+    UnOp, BinOp, If, While, Block
 )
 
 class Parser:
@@ -36,14 +36,6 @@ class Parser:
         if tok.kind == 'INT':
             Parser.lex.select_next()
             return IntVal(tok.value)
-
-        if tok.kind == 'STR':
-            Parser.lex.select_next()
-            return StringVal(tok.value)
-
-        if tok.kind == 'BOOL':
-            Parser.lex.select_next()
-            return BoolVal(tok.value)
 
         if tok.kind == 'IDEN':
             Parser.lex.select_next()
@@ -137,34 +129,6 @@ class Parser:
         return Block(children)
 
     @staticmethod
-    def parse_var_declaration() -> Node:
-        # grammar: let TYPE IDEN [= expr] ;
-        if Parser.lex.next.kind != 'VAR':
-            raise Exception(f"[Parser] Esperado 'let', obtido {Parser.lex.next.kind}")
-        Parser.lex.select_next()
-
-        if Parser.lex.next.kind != 'TYPE':
-            raise Exception(f"[Parser] Esperado TYPE (string|number|boolean), obtido {Parser.lex.next.kind}")
-        vtype_text = Parser.lex.next.value
-        Parser.lex.select_next()
-
-        if Parser.lex.next.kind != 'IDEN':
-            raise Exception(f"[Parser] Esperado IDENTIFIER após TYPE, obtido {Parser.lex.next.kind}")
-        ident_name = Parser.lex.next.value
-        Parser.lex.select_next()
-
-        init_expr = None
-        if Parser.lex.next.kind == 'ASSIGN':
-            Parser.lex.select_next()
-            init_expr = Parser.parse_bool_expression()
-
-        if Parser.lex.next.kind != 'END':
-            raise Exception(f"[Parser] Esperado ';' ao final da declaração, obtido {Parser.lex.next.kind}")
-        Parser.lex.select_next()
-
-        return VarDec(vtype_text, Identifier(ident_name), init_expr)
-
-    @staticmethod
     def parse_statement() -> Node:
         tok = Parser.lex.next
 
@@ -174,9 +138,6 @@ class Parser:
 
         if tok.kind == 'OPEN_BRA':
             return Parser.parse_block()
-
-        if tok.kind == 'VAR':
-            return Parser.parse_var_declaration()
 
         if tok.kind == 'PRINT':
             Parser.lex.select_next()
