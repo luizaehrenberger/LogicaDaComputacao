@@ -9,53 +9,43 @@ from nodes import (
 class Parser:
     lex: Lexer | None = None
 
-    # ------ helpers ------
     @staticmethod
     def _expect(kind: str, msg: str):
         if Parser.lex.next.kind != kind:
             raise Exception(f"[Parser] {msg}: obtido {Parser.lex.next.kind}")
         Parser.lex.select_next()
 
-    # ------- fatores -------
     @staticmethod
     def parse_factor() -> Node:
         tok = Parser.lex.next
-
         if tok.kind == 'NOT':
             Parser.lex.select_next()
             return UnOp('!', Parser.parse_factor())
-
         if tok.kind == 'PLUS':
             Parser.lex.select_next()
             return UnOp('+', Parser.parse_factor())
         if tok.kind == 'MINUS':
             Parser.lex.select_next()
             return UnOp('-', Parser.parse_factor())
-
         if tok.kind == 'OPEN_PAR':
             Parser.lex.select_next()
             node = Parser.parse_bool_expression()
             Parser._expect('CLOSE_PAR', "Esperado ')'")
             return node
-
         if tok.kind == 'INT':
             Parser.lex.select_next()
             return IntVal(tok.value)
-
         if tok.kind == 'STR':
             Parser.lex.select_next()
             return StringVal(tok.value)
-
         if tok.kind == 'BOOL':
             Parser.lex.select_next()
             return BoolVal(tok.value)
-
         if tok.kind == 'IDEN':
             name = tok.value
             Parser.lex.select_next()
-            # fator pode ser: IDENT ou CHAMADA
             if Parser.lex.next.kind == 'OPEN_PAR':
-                Parser.lex.select_next()  # '('
+                Parser.lex.select_next()
                 args: List[Node] = []
                 if Parser.lex.next.kind != 'CLOSE_PAR':
                     args.append(Parser.parse_bool_expression())
@@ -66,16 +56,13 @@ class Parser:
                 return FuncCall(name, args)
             else:
                 return Identifier(name)
-
         if tok.kind == 'READ':
             Parser.lex.select_next()
             Parser._expect('OPEN_PAR', "Esperado '('")
             Parser._expect('CLOSE_PAR', "Esperado ')'")
             return Read()
-
         raise Exception(f"[Parser] Token inesperado em FACTOR: {tok.kind}")
 
-    # ------- aritmética -------
     @staticmethod
     def parse_term() -> Node:
         left = Parser.parse_factor()
@@ -98,7 +85,6 @@ class Parser:
             left = BinOp(op, left, right)
         return left
 
-    # ------- relacionais -------
     @staticmethod
     def parse_rel_expression() -> Node:
         left = Parser.parse_expression()
@@ -114,7 +100,6 @@ class Parser:
             left = BinOp(op, left, right)
         return left
 
-    # ------- booleanos -------
     @staticmethod
     def parse_bool_term() -> Node:
         left = Parser.parse_rel_expression()
@@ -133,35 +118,29 @@ class Parser:
             left = BinOp('||', left, right)
         return left
 
-    # ------- bloco -------
     @staticmethod
     def parse_block() -> Node:
         Parser._expect('OPEN_BRA', "Esperado '{'")
         children: List[Node] = []
         while Parser.lex.next.kind != 'CLOSE_BRA':
+            if Parser.lex.next.kind == 'FUNC':
+                raise Exception("[Parser] Declaração de função só é permitida no escopo global")
             if Parser.lex.next.kind == 'OPEN_BRA':
                 children.append(Parser.parse_block())
             else:
                 children.append(Parser.parse_statement())
-        Parser.lex.select_next()  # consumir '}'
+        Parser.lex.select_next()
         return Block(children)
 
-    # ------- var decl -------
     @staticmethod
     def parse_var_declaration() -> Node:
-        # Aceita:
-        #   (A) let TYPE IDEN [= expr] ;
-        #   (B) let IDEN : TYPE [= expr] ;
         if Parser.lex.next.kind != 'VAR':
             raise Exception(f"[Parser] Esperado 'let', obtido {Parser.lex.next.kind}")
         Parser.lex.select_next()
-
         vtype_text = None
         ident_name = None
         init_expr = None
-
         if Parser.lex.next.kind == 'TYPE':
-            # Forma A
             vtype_text = Parser.lex.next.value
             Parser.lex.select_next()
             if Parser.lex.next.kind != 'IDEN':
@@ -169,7 +148,6 @@ class Parser:
             ident_name = Parser.lex.next.value
             Parser.lex.select_next()
         elif Parser.lex.next.kind == 'IDEN':
-            # Forma B
             ident_name = Parser.lex.next.value
             Parser.lex.select_next()
             Parser._expect('COLON', "Esperado ':'")
@@ -179,28 +157,22 @@ class Parser:
             Parser.lex.select_next()
         else:
             raise Exception(f"[Parser] Esperado TYPE ou IDENTIFIER após 'let', obtido {Parser.lex.next.kind}")
-
         if Parser.lex.next.kind == 'ASSIGN':
             Parser.lex.select_next()
             init_expr = Parser.parse_bool_expression()
-
         Parser._expect('END', "Esperado ';' ao final da declaração")
         return VarDec(vtype_text, Identifier(ident_name), init_expr)
 
-    # ------- func decl -------
     @staticmethod
     def parse_func_declaration() -> Node:
-        # function nome ( [id:TYPE {, id:TYPE}] ) : TYPE  { Block }
         Parser._expect('FUNC', "Esperado 'function'")
         if Parser.lex.next.kind != 'IDEN':
             raise Exception(f"[Parser] Esperado nome da função, obtido {Parser.lex.next.kind}")
         fname = Parser.lex.next.value
         Parser.lex.select_next()
-
         Parser._expect('OPEN_PAR', "Esperado '('")
         params: List[VarDec] = []
         if Parser.lex.next.kind != 'CLOSE_PAR':
-            # pelo menos um param: id : TYPE
             if Parser.lex.next.kind != 'IDEN':
                 raise Exception(f"[Parser] Esperado identificador de parâmetro, obtido {Parser.lex.next.kind}")
             p_name = Parser.lex.next.value
@@ -224,31 +196,24 @@ class Parser:
                 Parser.lex.select_next()
                 params.append(VarDec(p_type, Identifier(p_name)))
         Parser._expect('CLOSE_PAR', "Esperado ')'")
-
         Parser._expect('COLON', "Esperado ':' após parâmetros")
         if Parser.lex.next.kind != 'TYPE':
             raise Exception(f"[Parser] Esperado TYPE de retorno (string|number|boolean|void), obtido {Parser.lex.next.kind}")
         ret_type = Parser.lex.next.value
         Parser.lex.select_next()
-
         body = Parser.parse_block()
         return FuncDec(ret_type, Identifier(fname), params, body)
 
-    # ------- statement -------
     @staticmethod
     def parse_statement() -> Node:
         tok = Parser.lex.next
-
         if tok.kind == 'END':
             Parser.lex.select_next()
             return NoOp()
-
         if tok.kind == 'OPEN_BRA':
             return Parser.parse_block()
-
         if tok.kind == 'VAR':
             return Parser.parse_var_declaration()
-
         if tok.kind == 'PRINT':
             Parser.lex.select_next()
             Parser._expect('OPEN_PAR', "Esperado '('")
@@ -256,7 +221,6 @@ class Parser:
             Parser._expect('CLOSE_PAR', "Esperado ')'")
             Parser._expect('END', "Esperado ';'")
             return Print(expr)
-
         if tok.kind == 'IF':
             Parser.lex.select_next()
             Parser._expect('OPEN_PAR', "Esperado '('")
@@ -268,7 +232,6 @@ class Parser:
                 Parser.lex.select_next()
                 else_block = Parser.parse_block()
             return If(cond, then_block, else_block)
-
         if tok.kind == 'WHILE':
             Parser.lex.select_next()
             Parser._expect('OPEN_PAR', "Esperado '('")
@@ -276,27 +239,21 @@ class Parser:
             Parser._expect('CLOSE_PAR', "Esperado ')'")
             body = Parser.parse_block()
             return While(cond, body)
-
         if tok.kind == 'RETURN':
             Parser.lex.select_next()
             expr = Parser.parse_bool_expression()
             Parser._expect('END', "Esperado ';' após return")
             return Return(expr)
-
-        if tok.kind == 'FUNC':
-            return Parser.parse_func_declaration()
-
         if tok.kind == 'IDEN':
             name = tok.value
             Parser.lex.select_next()
-            # pode ser atribuição OU chamada de função terminada em ';'
             if Parser.lex.next.kind == 'ASSIGN':
                 Parser.lex.select_next()
                 expr = Parser.parse_bool_expression()
                 Parser._expect('END', "Esperado ';'")
                 return Assignment(Identifier(name), expr)
             elif Parser.lex.next.kind == 'OPEN_PAR':
-                Parser.lex.select_next()  # '('
+                Parser.lex.select_next()
                 args: List[Node] = []
                 if Parser.lex.next.kind != 'CLOSE_PAR':
                     args.append(Parser.parse_bool_expression())
@@ -308,10 +265,8 @@ class Parser:
                 return FuncCall(name, args)
             else:
                 raise Exception(f"[Parser] Esperado '=' ou '(' após identificador em statement, obtido {Parser.lex.next.kind}")
-
         raise Exception(f"[Parser] Instrução inválida: inicia com {tok.kind}")
 
-    # ------- programa -------
     @staticmethod
     def parse_program() -> Node:
         children: List[Node] = []
